@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Series and Labels</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+
+    input[type="number"],
+    select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='4' viewBox='0 0 8 4'%3E%3Cpath fill='%23333333' d='M4 4L0 0h8z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px top 50%;
+      background-size: 8px 4px;
+    }
+
+    input[type="submit"] {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    input[type="submit"]:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+    <div class="container">
+      <h2>Enter Series and Labels</h2>
+      <form id="dataForm">
+        <div class="form-group">
+          <label for="series">Series:</label>
+          <input type="number" id="series" name="series" min="0" step="1" required>
+        </div>
+        <div class="form-group">
+          <label for="labels">Labels:</label>
+          <select id="labels" name="labels" required>
+            <option value="" disabled selected>Select a month</option>
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+          </select>
+        </div>
+        <input type="submit" value="Submit">
+        <p id="message" style="display: none;">Data submitted successfully!</p>
+      </form>
+    </div>
+  
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        // Function to fetch existing data from the database
+        function fetchData() {
+          fetch('http://localhost:3000/fetch-data')
+            .then(response => response.json())
+            .then(data => {
+              // Call function to generate select options based on retrieved data
+              generateSelectOptions(data.labels); // Pass only labels array to the function
+            })
+            .catch(error => console.error('Error fetching data:', error));
+        }
+  
+        // Function to generate select options based on retrieved data
+        function generateSelectOptions(labels) {
+          const selectElement = document.getElementById('labels');
+          selectElement.innerHTML = ''; // Clear existing options
+  
+          const months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+          ];
+  
+          months.forEach(month => {
+            const option = document.createElement('option');
+            option.value = month;
+            option.textContent = month;
+  
+            // Check if the month has already been submitted
+            if (labels.includes(month)) {
+              option.disabled = true; // Disable the option
+            }
+  
+            selectElement.appendChild(option);
+          });
+        }
+  
+        // Fetch data when the page loads
+        fetchData();
+  
+        // Add event listener for form submission
+        document.getElementById('dataForm').addEventListener('submit', function(event) {
+          event.preventDefault();
+          
+          var formData = new FormData(this);
+          var series = formData.get('series');
+          var label = formData.get('labels');
+  
+          // AJAX request to send data to server-side script
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', 'http://localhost:3000/save-data', true);
+          xhr.setRequestHeader('Content-Type', 'application/json');
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              console.log('Data saved successfully');
+              document.getElementById('message').style.display = 'block'; // Show success message
+              document.getElementById('series').value = ''; // Clear series input
+              document.getElementById('labels').selectedIndex = 0; // Reset select dropdown
+            } else {
+              console.error('Error saving data:', xhr.statusText);
+            }
+          };
+          xhr.onerror = function() {
+            console.error('Error saving data:', xhr.statusText);
+          };
+          xhr.send(JSON.stringify({ series: series, label: label }));
+        });
+      });
+    </script>
+  </body>
+</html>
